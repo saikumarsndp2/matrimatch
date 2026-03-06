@@ -77,6 +77,45 @@ app.get('/api/users/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
+ 
 
 app.listen(3000, () => console.log('🚀 Server on http://localhost:3000'));
+
+
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+
+// LOGIN API ✅
+app.post('/api/users/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Find user
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // JWT Token
+    const token = jwt.sign(
+      { userId: user._id }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
+    );
+    
+    res.json({
+      message: 'Login successful!',
+      token,
+      user: { id: user._id, name: user.name, email: user.email }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
