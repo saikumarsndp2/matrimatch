@@ -13,7 +13,7 @@ app.use(express.json());
 // In-memory users (replace with MySQL later)
 let users = [];
 
-// REGISTER with PASSWORD HASHING
+// REGISTER with PASSWORD HASHING + interestedProfiles FIELD
 app.post('/api/register', async (req, res) => {
     try {
         const { name, email, password, age, gender, religion, location, profession } = req.body;
@@ -27,7 +27,7 @@ app.post('/api/register', async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         
-        // Create new user
+        // Create new user WITH interestedProfiles
         const newUser = { 
             id: Date.now(), 
             name, 
@@ -37,7 +37,8 @@ app.post('/api/register', async (req, res) => {
             gender, 
             religion, 
             location, 
-            profession 
+            profession,
+            interestedProfiles: []     // ← NEW FIELD ADDED HERE
         };
         users.push(newUser);
         
@@ -88,7 +89,7 @@ app.get('/api/profiles', (req, res) => {
     res.json(publicProfiles);
 });
 
-// GET SINGLE PROFILE (PROTECTED - Task 4)
+// GET SINGLE PROFILE (PROTECTED)
 app.get('/api/profile/:id', authenticateToken, (req, res) => {
     const user = users.find(u => u.id == req.params.id);
     if (!user) {
@@ -98,7 +99,51 @@ app.get('/api/profile/:id', authenticateToken, (req, res) => {
     res.json(publicProfile);
 });
 
-// JWT MIDDLEWARE (Task 4)
+// FILTER API (NEW)
+app.get('/api/profiles/filter', authenticateToken, (req, res) => {
+    const { ageMin, ageMax, religion, location, search } = req.query;
+    
+    let filtered = users.filter(user => {
+        // Age filter
+        if (ageMin && user.age < parseInt(ageMin)) return false;
+        if (ageMax && user.age > parseInt(ageMax)) return false;
+        
+        // Religion filter
+        if (religion && user.religion !== religion) return false;
+        
+        // Location filter
+        if (location && !user.location.toLowerCase().includes(location.toLowerCase())) return false;
+        
+        // Search filter
+        if (search && !user.name.toLowerCase().includes(search.toLowerCase())) return false;
+        
+        return true;
+    });
+    
+    // Hide passwords
+    const publicProfiles = filtered.map(({ password, ...profile }) => profile);
+    res.json(publicProfiles);
+});
+
+// EXPRESS INTEREST API (NEW)
+app.post('/api/interest/:targetId', authenticateToken, (req, res) => {
+    const targetId = req.params.targetId;
+    const userId = req.user.userId;  // From JWT token
+    
+    const user = users.find(u => u.id == userId);
+    if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (!user.interestedProfiles.includes(targetId)) {
+        user.interestedProfiles.push(targetId);
+        res.json({ success: true, message: 'Interest sent successfully!' });
+    } else {
+        res.json({ success: false, message: 'Already expressed interest!' });
+    }
+});
+
+// JWT MIDDLEWARE
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN

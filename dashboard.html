@@ -22,6 +22,28 @@
             <div class="stat-card">Males: <span id="stat-male">0</span></div>
             <div class="stat-card">Females: <span id="stat-female">0</span></div>
         </section>
+
+        <!-- ADD FILTERS HERE -->
+        <section class="filters-section">
+            <div class="filters">
+                <label>Age: <span id="ageRange">18-60</span></label>
+                <input type="range" id="ageMin" min="18" max="60" value="18" oninput="updateAgeRange()">
+                <input type="range" id="ageMax" min="18" max="60" value="60" oninput="updateAgeRange()">
+                <select id="religionFilter">
+                    <option value="">All Religions</option>
+                    <option>Hindu</option><option>Muslim</option><option>Christian</option>
+                    <option>Sikh</option><option>Jain</option>
+                </select>
+                <select id="locationFilter">
+                    <option value="">All Locations</option>
+                    <option>Hyderabad</option><option>Bengaluru</option>
+                    <option>Mumbai</option><option>Delhi</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search by name...">
+                <button onclick="loadFilteredProfiles()">🔍 Search</button>
+            </div>
+        </section>
+
         <section class="profiles-grid" id="profiles-grid">
             <!-- profiles will load here -->
         </section>
@@ -30,5 +52,4 @@
 
 <script src="script.js"></script>
 </body>
-
 </html>
